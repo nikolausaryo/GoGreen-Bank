@@ -14,6 +14,14 @@
 
     <form method="POST" action="{{ route('nasabah.dropoff.store') }}" enctype="multipart/form-data" class="mx-auto" style="max-width:520px">
         @csrf
+        <div class="mb-3">
+            <label class="fw-bold small mb-1">Kode QR Nasabah</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-qr-code text-green"></i></span>
+                <input class="form-control bg-light" value="{{ auth()->user()->member_id }}" readonly>
+            </div>
+            <div class="text-muted-2 small mt-1">Otomatis dari akun Anda — akan disertakan pada laporan drop-off.</div>
+        </div>
         <div class="soft-card d-flex flex-column align-items-center justify-content-center mb-3" style="height:260px;background:var(--inverse)">
             <i class="bi bi-camera text-white fs-1 opacity-50"></i>
             <span class="text-white-50 small mt-2">Pratinjau kamera / unggahan</span>

@@ -8,26 +8,25 @@
             <div class="col-6 col-lg-2 offset-lg-1">
                 <div class="fw-bold text-white mb-3">Platform</div>
                 <div class="d-flex flex-column gap-2 small">
-                    <a href="#">Cara Kerja</a><a href="#">Eco-Credit</a><a href="#">Peta SmartHub</a>
+                    <a href="{{ route('landing') }}">Cara Kerja</a><a href="{{ route('lokasi') }}">Peta SmartHub</a>
                 </div>
             </div>
             <div class="col-6 col-lg-2">
                 <div class="fw-bold text-white mb-3">Perusahaan</div>
                 <div class="d-flex flex-column gap-2 small">
-                    <a href="#">Tentang Kami</a><a href="#">Laporan Keberlanjutan</a><a href="#">Karir</a>
+                    <a href="https://www.instagram.com/bs.gogreen?igsh=dG40cTllNjVqYXl5">Tentang Kami</a>
                 </div>
             </div>
             <div class="col-6 col-lg-2">
                 <div class="fw-bold text-white mb-3">Dukungan</div>
                 <div class="d-flex flex-column gap-2 small">
-                    <a href="#">Pusat Bantuan</a><a href="#">Hubungi Kami</a><a href="#">FAQ</a>
+                    <a href="https://www.instagram.com/nikolausaryos?igsh=OHhtdHpvdmF2YTFw">Pusat Bantuan</a><a href="https://www.instagram.com/bs.gogreen?igsh=dG40cTllNjVqYXl5">Hubungi Kami</a>
                 </div>
             </div>
         </div>
         <hr class="border-secondary my-4">
         <div class="d-flex flex-wrap justify-content-between small">
             <span>© 2024 GoGreen Platform Sampah Menjadi Sumber Daya. Didukung oleh Circular Economy Solutions.</span>
-            <span class="d-flex gap-3"><a href="#">Kebijakan Privasi</a><a href="#">Syarat dan Ketentuan</a><a href="#">Standar Eco</a></span>
         </div>
     </div>
 </footer>

@@ -15,7 +15,17 @@ class NasabahController extends Controller
         $user = Auth::user();
         $transactions = $user->transactions()->with('wasteCategory')->take(5)->get();
         $featured = WasteCategory::whereIn('name', ['PET Bersih', 'Kardus', 'Elektronik', 'Botol Kaca'])->get();
-        return view('nasabah.dashboard', compact('user', 'transactions', 'featured'));
+        $cardRequest = \App\Models\CardRequest::where('user_id', $user->id)->first();
+        return view('nasabah.dashboard', compact('user', 'transactions', 'featured', 'cardRequest'));
+    }
+
+    public function requestCard()
+    {
+        $user = Auth::user();
+        if (! \App\Models\CardRequest::where('user_id', $user->id)->exists()) {
+            \App\Models\CardRequest::create(['user_id' => $user->id, 'status' => 'menunggu']);
+        }
+        return back()->with('success', 'Permintaan cetak kartu dikirim. Silakan ambil ke petugas.');
     }
 
     public function katalog()
@@ -69,9 +79,8 @@ class NasabahController extends Controller
         }
 
         Withdrawal::create($data + ['user_id' => $user->id, 'status' => 'menunggu']);
-        $user->decrement('balance', $data['amount']);
 
         return redirect()->route('nasabah.dashboard')
-            ->with('success', 'Permintaan penarikan saldo berhasil dikirim.');
+            ->with('success', 'Permintaan penarikan dikirim. Saldo dipotong setelah diverifikasi petugas.');
     }
 }

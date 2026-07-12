@@ -5,7 +5,7 @@ use App\Http\Controllers\PublicController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NasabahController;
 use App\Http\Controllers\KaryawanController;
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SettingController;
 
 /* ---------- Halaman Publik (tanpa login) ---------- */
 Route::get('/', [PublicController::class, 'landing'])->name('landing');
@@ -26,8 +26,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 
 // Pengaturan profil (untuk nasabah & karyawan)
 Route::middleware('auth')->group(function () {
-    Route::get('/pengaturan', [SettingsController::class, 'edit'])->name('settings');
-    Route::post('/pengaturan', [SettingsController::class, 'update'])->name('settings.update');
+    Route::get('/pengaturan', [SettingController::class, 'edit'])->name('settings');
+    Route::post('/pengaturan', [SettingController::class, 'update'])->name('settings.update');
 });
 
 /* ---------- Area Nasabah ---------- */
@@ -38,6 +38,7 @@ Route::middleware(['auth', 'role:nasabah'])->prefix('nasabah')->name('nasabah.')
     Route::get('/drop-off', [NasabahController::class, 'dropOffForm'])->name('dropoff');
     Route::post('/drop-off', [NasabahController::class, 'storeDropOff'])->name('dropoff.store');
     Route::post('/withdraw', [NasabahController::class, 'withdraw'])->name('withdraw');
+    Route::post('/kartu/ajukan', [NasabahController::class, 'requestCard'])->name('card.request');
 });
 
 /* ---------- Area Karyawan ---------- */
@@ -47,4 +48,9 @@ Route::middleware(['auth', 'role:karyawan'])->prefix('karyawan')->name('karyawan
     Route::get('/drop-off', [KaryawanController::class, 'dropOff'])->name('dropoff');
     Route::get('/input/{user}', [KaryawanController::class, 'input'])->name('input');
     Route::post('/input', [KaryawanController::class, 'storeTransaction'])->name('input.store');
+    Route::post('/penarikan/{withdrawal}/verifikasi', [KaryawanController::class, 'verifyWithdrawal'])->name('withdrawal.verify');
+    Route::post('/drop-off/{report}/verifikasi', [KaryawanController::class, 'verifyDropOff'])->name('dropoff.verify');
+    Route::get('/kartu', [KaryawanController::class, 'cardRequests'])->name('card.index');
+    Route::get('/kartu/{cardRequest}/cetak', [KaryawanController::class, 'showCard'])->name('card.show');
+    Route::post('/kartu/{cardRequest}/selesai', [KaryawanController::class, 'markPrinted'])->name('card.printed');
 });

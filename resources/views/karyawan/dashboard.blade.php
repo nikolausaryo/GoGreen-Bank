@@ -9,10 +9,10 @@
 
 {{-- Metrik --}}
 <div class="row g-3 mb-3">
-    <div class="col-6 col-lg-3"><div class="metric-card"><div class="l">Total Diproses</div><div class="v text-green">{{ $stats['total_ton'] }} <small class="fs-6 text-muted-2">Ton</small></div><div class="small text-green">+12% mingguan</div></div></div>
-    <div class="col-6 col-lg-3"><div class="metric-card"><div class="l">Target Harian</div><div class="v text-green">{{ $stats['target'] }}%</div><div class="progress mt-1" style="height:6px"><div class="progress-bar bg-success" style="width:{{ $stats['target'] }}%"></div></div></div></div>
-    <div class="col-6 col-lg-3"><div class="metric-card"><div class="l">Tugas Tertunda</div><div class="v">{{ $stats['pending'] }} <small class="fs-6 text-muted-2">Aktif</small></div><span class="badge-status badge-menunggu mt-1">Perlu Tindakan</span></div></div>
-    <div class="col-6 col-lg-3"><div class="metric-card"><div class="l">Skor Dampak</div><div class="v text-green">4.8 <small class="fs-6 text-muted-2">CO2e</small></div><div class="small text-muted-2"><i class="bi bi-tree-fill text-green"></i> ~240 Pohon Tertanam</div></div></div>
+    <div class="col-6 col-lg-3"><div class="metric-card h-100"><div class="l">Total Diproses</div><div class="v text-green">{{ $stats['berat_hari_ini'] }} <small class="fs-6 text-muted-2">kg</small></div><div class="small text-muted-2">Ditimbang hari ini</div></div></div>
+    <div class="col-6 col-lg-3"><div class="metric-card h-100"><div class="l">Tanggal</div><div class="v text-green">{{ $stats['tanggal'] }}</div><div class="small text-muted-2">{{ $stats['hari'] }}</div></div></div>
+    <div class="col-6 col-lg-3"><div class="metric-card h-100"><div class="l">Tugas Tertunda</div><div class="v">{{ $stats['pending'] }} <small class="fs-6 text-muted-2">Aktif</small></div><span class="badge-status badge-menunggu mt-1">Perlu Tindakan</span></div></div>
+    <div class="col-6 col-lg-3"><div class="metric-card h-100"><div class="l">Nasabah Masuk</div><div class="v text-green">{{ $stats['nasabah_masuk'] }} <small class="fs-6 text-muted-2">Nasabah</small></div><div class="small text-muted-2">Scan QR / drop-off hari ini</div></div></div>
 </div>
 
 {{-- Aktivitas Terbaru --}}
@@ -46,7 +46,7 @@
     <p class="text-muted-2 small">Ringkasan aktivitas penarikan tabungan</p>
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr class="text-muted-2 small"><th>ID Penarikan</th><th>Kontributor</th><th>Opsi Penarikan</th><th>Nomor Rekening/E-Wallet</th><th>Nominal</th><th>Status</th></tr></thead>
+            <thead><tr class="text-muted-2 small"><th>ID Penarikan</th><th>Kontributor</th><th>Opsi Penarikan</th><th>Nomor Rekening/E-Wallet</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody>
             @forelse ($recentWithdrawals as $w)
                 <tr>
@@ -56,9 +56,22 @@
                     <td>{{ $w->account_number }}</td>
                     <td class="fw-800 text-green">Rp {{ number_format($w->amount, 0, ',', '.') }}</td>
                     <td><span class="badge-status badge-{{ $w->status }}"><i class="bi bi-check-circle"></i> {{ ucfirst($w->status) }}</span></td>
+                    <td>
+                        @if ($w->status === 'menunggu')
+                            <form method="POST" action="{{ route('karyawan.withdrawal.verify', $w) }}"
+                                data-confirm="Verifikasi penarikan {{ $w->code }}? Saldo nasabah akan dipotong Rp {{ number_format($w->amount, 0, ',', '.') }}."
+                                data-confirm-title="Verifikasi Penarikan"
+                                data-confirm-ok="Ya, Verifikasi">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-forest">Verifikasi</button>
+                            </form>
+                        @else
+                            <span class="text-muted-2 small">—</span>
+                        @endif
+                    </td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="text-center text-muted-2 py-4">Belum ada penarikan.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted-2 py-4">Belum ada penarikan.</td></tr>
             @endforelse
             </tbody>
         </table>

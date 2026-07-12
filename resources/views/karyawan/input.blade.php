@@ -9,7 +9,13 @@
 
 {{-- Profil nasabah yang dilayani --}}
 <div class="gg-card p-3 mb-3 d-flex align-items-center" style="border-left:4px solid var(--green)">
-    <div class="price-icon"><i class="bi bi-person-fill"></i></div>
+    <div class="price-icon overflow-hidden">
+        @if ($user->avatar)
+            <img src="{{ asset('storage/' . $user->avatar) }}" alt="Foto {{ $user->name }}" style="width:100%;height:100%;object-fit:cover">
+        @else
+            <i class="bi bi-person-fill"></i>
+        @endif
+    </div>
     <div class="ms-3">
         <div class="fw-800 fs-5">{{ $user->name }}</div>
         <div class="text-muted-2 small">ID: {{ $user->member_id }} · Anggota sejak {{ $user->created_at->format('M Y') }}</div>

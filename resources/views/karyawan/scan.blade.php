@@ -9,17 +9,16 @@
 </div>
 
 <div class="mx-auto" style="max-width:560px">
-    <div class="soft-card d-flex align-items-center justify-content-center mb-3 position-relative" style="height:300px;background:var(--inverse)">
-        <i class="bi bi-qr-code-scan text-white fs-1 opacity-50"></i>
-        <div class="position-absolute" style="inset:40px;border:3px solid var(--green-bright);border-radius:16px"></div>
-    </div>
+    <div id="qr-reader" class="mx-auto mb-2" style="max-width:400px"></div>
+    <p class="text-center text-muted-2 small mb-3">Izinkan akses kamera, lalu arahkan ke QR nasabah (kartu atau layar HP).</p>
 
     <div class="text-center text-muted-2 small mb-2">— ATAU MASUKKAN ID NASABAH SECARA MANUAL —</div>
-    <form method="POST" action="{{ route('karyawan.scan') }}">
+    <form method="POST" action="{{ route('karyawan.scan') }}" id="scan-form">
         @csrf
+        <input type="hidden" name="from" value="{{ request('from', 'scan') }}">
         <div class="input-group">
             <span class="input-group-text"><i class="bi bi-person-vcard"></i></span>
-            <input name="member_id" class="form-control" placeholder="Contoh: GGB-9021" required>
+            <input id="member_id" name="member_id" class="form-control" placeholder="Contoh: GGB-9021" required>
             <button class="btn btn-green-soft px-4"><i class="bi bi-search"></i> Cari</button>
         </div>
     </form>
@@ -31,4 +30,23 @@
         <div class="col-md-4"><div class="soft-card p-3"><i class="bi bi-shield-check text-green"></i><div class="small text-muted-2">Mode Keamanan</div><div class="fw-bold small">Enkripsi Aktif</div></div></div>
     </div>
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+    function onScanSuccess(decodedText) {
+        document.getElementById('member_id').value = decodedText.trim();
+        try { html5QrcodeScanner.clear(); } catch (e) {}
+        document.getElementById('scan-form').submit();
+    }
+
+    var html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    }, false);
+    html5QrcodeScanner.render(onScanSuccess);
+</script>
+@endpush
 @endsection

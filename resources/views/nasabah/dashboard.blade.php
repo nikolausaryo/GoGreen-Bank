@@ -3,6 +3,28 @@
 @section('sidebar') @include('partials.nasabah-sidebar') @endsection
 
 @section('content')
+@if (!$cardRequest)
+    <div class="gg-card p-3 mb-3 d-flex align-items-center gap-3" style="border-left:4px solid var(--green)">
+        <i class="bi bi-person-vcard fs-3 text-green"></i>
+        <div class="flex-grow-1">
+            <div class="fw-800">Kartu Anggota Anda belum dicetak</div>
+            <div class="text-muted-2 small">Ajukan cetak kartu, lalu ambil ke petugas.</div>
+        </div>
+        <form method="POST" action="{{ route('nasabah.card.request') }}">
+            @csrf
+            <button class="btn btn-forest btn-sm">Ajukan Kartu</button>
+        </form>
+    </div>
+@elseif ($cardRequest->status === 'menunggu')
+    <div class="gg-card p-3 mb-3 d-flex align-items-center gap-3" style="border-left:4px solid #f0ad4e">
+        <i class="bi bi-hourglass-split fs-3 text-green"></i>
+        <div>
+            <div class="fw-800">Pengajuan kartu sedang diproses</div>
+            <div class="text-muted-2 small">Petugas akan menyiapkan kartu Anda.</div>
+        </div>
+    </div>
+@endif
+
 <h2 class="fw-800 mb-0">Dashboard Nasabah</h2>
 <p class="text-muted-2">Pantau kontribusi hijau dan hadiah Anda secara real-time.</p>
 

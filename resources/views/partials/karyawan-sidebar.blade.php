@@ -20,6 +20,7 @@
         <a href="{{ route('karyawan.dashboard') }}" class="{{ request()->routeIs('karyawan.dashboard') ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Ringkasan</a>
         <a href="{{ route('karyawan.scan') }}" class="{{ request()->routeIs('karyawan.scan') || (request()->routeIs('karyawan.input') && $from !== 'dropoff') ? 'active' : '' }}"><i class="bi bi-qr-code-scan"></i> Scan QR Code</a>
         <a href="{{ route('karyawan.dropoff') }}" class="{{ request()->routeIs('karyawan.dropoff') || (request()->routeIs('karyawan.input') && $from === 'dropoff') ? 'active' : '' }}"><i class="bi bi-geo-alt"></i> Drop Off</a>
+        <a href="{{ route('karyawan.card.index') }}" class="{{ request()->routeIs('karyawan.card.*') ? 'active' : '' }}"><i class="bi bi-person-vcard"></i> Kartu Anggota</a>
     </nav>
 
     <div class="mt-auto gg-menu">

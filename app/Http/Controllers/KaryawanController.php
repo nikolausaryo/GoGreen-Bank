@@ -17,11 +17,24 @@ class KaryawanController extends Controller
         $recentTransactions = Transaction::with(['user', 'wasteCategory'])->latest()->take(5)->get();
         $recentWithdrawals = Withdrawal::with('user')->latest()->take(3)->get();
 
+        $today = \Carbon\Carbon::today();
+
         $stats = [
-            'total_ton' => round(Transaction::sum('weight') / 1000, 1),
-            'target' => 82,
+            // Akumulasi berat yang ditimbang hari ini
+            'berat_hari_ini' => round(Transaction::whereDate('created_at', $today)->sum('weight'), 2),
+
+            // Tanggal & hari saat dashboard dibuka
+            'tanggal' => \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y'),
+            'hari'    => \Carbon\Carbon::now()->locale('id')->translatedFormat('l'),
+
+            // Tugas tertunda (tetap seperti sebelumnya)
             'pending' => Transaction::where('status', 'menunggu')->count()
                         + \App\Models\DropOffReport::where('status', 'menunggu')->count(),
+
+            // Jumlah nasabah berbeda yang masuk hari ini (scan QR atau drop-off)
+            'nasabah_masuk' => Transaction::whereDate('created_at', $today)
+                        ->whereIn('method', ['scan_qr', 'drop_off'])
+                        ->distinct()->count('user_id'),
         ];
 
         return view('karyawan.dashboard', compact('recentTransactions', 'recentWithdrawals', 'stats'));
@@ -46,7 +59,8 @@ class KaryawanController extends Controller
     public function dropOff()
     {
         $nasabahs = User::where('role', 'nasabah')->withCount('transactions')->get();
-        return view('karyawan.dropoff', compact('nasabahs'));
+        $reports = \App\Models\DropOffReport::with('user')->latest()->get();
+        return view('karyawan.dropoff', compact('nasabahs', 'reports'));
     }
 
     // Halaman input penimbangan untuk 1 nasabah
@@ -94,5 +108,54 @@ class KaryawanController extends Controller
 
         return redirect()->route('karyawan.input', ['user' => $data['user_id'], 'from' => $from])
             ->with('success', 'Setoran tersimpan. Saldo nasabah bertambah Rp ' . number_format($total, 0, ',', '.') . '.');
+    }
+
+    // Verifikasi penarikan: potong saldo nasabah lalu tandai terverifikasi
+    public function verifyWithdrawal(Withdrawal $withdrawal)
+    {
+        if ($withdrawal->status !== 'menunggu') {
+            return back()->with('error', 'Penarikan ini sudah diproses sebelumnya.');
+        }
+
+        $nasabah = $withdrawal->user;
+
+        if ($withdrawal->amount > $nasabah->balance) {
+            return back()->with('error', 'Saldo nasabah tidak cukup untuk penarikan ini.');
+        }
+
+        $nasabah->decrement('balance', $withdrawal->amount);
+        $withdrawal->update(['status' => 'terverifikasi']);
+
+        return back()->with('success', 'Penarikan ' . $withdrawal->code
+            . ' diverifikasi. Saldo nasabah dipotong Rp '
+            . number_format($withdrawal->amount, 0, ',', '.') . '.');
+    }
+
+    public function verifyDropOff(\App\Models\DropOffReport $report)
+    {
+        if ($report->status !== 'menunggu') {
+            return back()->with('error', 'Laporan ini sudah diproses sebelumnya.');
+        }
+        $report->update(['status' => 'terverifikasi']);
+        return back()->with('success', 'Laporan drop-off dari ' . $report->user->name . ' telah diverifikasi.');
+    }
+
+    public function cardRequests()
+    {
+        $requests = \App\Models\CardRequest::with('user')->where('status', 'menunggu')->latest()->get();
+        return view('karyawan.cards', compact('requests'));
+    }
+
+    public function showCard(\App\Models\CardRequest $cardRequest)
+    {
+        $user = $cardRequest->user;
+        return view('karyawan.card-print', compact('cardRequest', 'user'));
+    }
+
+    public function markPrinted(\App\Models\CardRequest $cardRequest)
+    {
+        $cardRequest->update(['status' => 'dicetak']);
+        return redirect()->route('karyawan.card.index')
+            ->with('success', 'Kartu ' . $cardRequest->user->name . ' ditandai sudah dicetak.');
     }
 }

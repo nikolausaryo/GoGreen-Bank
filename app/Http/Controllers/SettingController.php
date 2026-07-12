@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-class SettingsController extends Controller
+class SettingController extends Controller
 {
     public function edit()
     {

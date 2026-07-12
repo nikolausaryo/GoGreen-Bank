@@ -46,6 +46,73 @@
 
 @include('partials.chatbot')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{{-- Modal konfirmasi serbaguna (dipakai semua form ber-atribut data-confirm) --}}
+<style>
+#ggConfirmModal .modal-content{ border:0; border-radius:1rem; box-shadow:0 18px 45px rgba(0,0,0,.15); }
+#ggConfirmModal .modal-header{ border-bottom:0; padding:1.25rem 1.25rem .25rem; }
+#ggConfirmModal .modal-title{ font-size:1.15rem; }
+#ggConfirmModal .modal-body{ font-size:1rem; line-height:1.65; color:#374151; padding:.5rem 1.25rem 1rem; }
+#ggConfirmModal .modal-footer{ border-top:0; padding:.5rem 1.25rem 1.25rem; }
+#ggConfirmModal .btn-forest{ padding-left:1.25rem; padding-right:1.25rem; }
+</style>
+<div class="modal fade" id="ggConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="ggConfirmTitle">Konfirmasi</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body" id="ggConfirmBody">Apakah Anda yakin?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-forest" id="ggConfirmOk">Ya, Lanjut</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+    var modalEl = document.getElementById('ggConfirmModal');
+    if (!modalEl || typeof bootstrap === 'undefined') return;
+    var modal   = new bootstrap.Modal(modalEl);
+    var bodyEl  = document.getElementById('ggConfirmBody');
+    var titleEl = document.getElementById('ggConfirmTitle');
+    var okBtn   = document.getElementById('ggConfirmOk');
+    var pendingForm = null;
+
+    function escapeHtml(s){
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (form.matches && form.matches('[data-confirm]')) {
+            e.preventDefault();
+            pendingForm = form;
+
+            // amankan teks dulu, lalu tonjolkan nominal "Rp ..."
+            var pesan = escapeHtml(form.getAttribute('data-confirm'));
+            pesan = pesan.replace(/Rp\s?[\d.,]*\d/g, '<span class="text-green fw-bold">$&</span>');
+            bodyEl.innerHTML = pesan;
+
+            titleEl.textContent = form.getAttribute('data-confirm-title') || 'Konfirmasi';
+            okBtn.textContent   = form.getAttribute('data-confirm-ok') || 'Ya, Lanjut';
+            modal.show();
+        }
+    });
+
+    okBtn.addEventListener('click', function () {
+        if (pendingForm) {
+            var f = pendingForm;
+            pendingForm = null;
+            modal.hide();
+            f.submit();
+        }
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () { pendingForm = null; });
+})();
+</script>
 @stack('scripts')
 </body>
 </html>
