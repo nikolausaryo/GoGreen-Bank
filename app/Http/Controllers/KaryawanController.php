@@ -158,4 +158,81 @@ class KaryawanController extends Controller
         return redirect()->route('karyawan.card.index')
             ->with('success', 'Kartu ' . $cardRequest->user->name . ' ditandai sudah dicetak.');
     }
+
+    /* ============ Kelola Jenis Sampah & Harga (CRUD) ============ */
+
+    // Daftar semua jenis sampah
+    public function categories()
+    {
+        $categories = WasteCategory::orderBy('category')->orderBy('name')->get();
+        return view('karyawan.categories.index', compact('categories'));
+    }
+
+    // Form tambah
+    public function createCategory()
+    {
+        return view('karyawan.categories.form', ['category' => new WasteCategory()]);
+    }
+
+    // Simpan data baru
+    public function storeCategory(Request $request)
+    {
+        $data = $this->validateCategory($request);
+        WasteCategory::create($data);
+
+        return redirect()->route('karyawan.categories.index')
+            ->with('success', 'Jenis sampah "' . $data['name'] . '" berhasil ditambahkan.');
+    }
+
+    // Form ubah
+    public function editCategory(WasteCategory $category)
+    {
+        return view('karyawan.categories.form', compact('category'));
+    }
+
+    // Perbarui data
+    public function updateCategory(Request $request, WasteCategory $category)
+    {
+        $data = $this->validateCategory($request);
+        $category->update($data);
+
+        return redirect()->route('karyawan.categories.index')
+            ->with('success', 'Jenis sampah "' . $data['name'] . '" berhasil diperbarui.');
+    }
+
+    // Hapus data (dicegah bila sudah dipakai transaksi)
+    public function destroyCategory(WasteCategory $category)
+    {
+        if ($category->transactions()->exists()) {
+            return back()->with('error', 'Jenis sampah "' . $category->name
+                . '" tidak dapat dihapus karena sudah memiliki riwayat transaksi.');
+        }
+
+        $name = $category->name;
+        $category->delete();
+
+        return back()->with('success', 'Jenis sampah "' . $name . '" berhasil dihapus.');
+    }
+
+    // Aturan validasi bersama (tambah & ubah)
+    private function validateCategory(Request $request): array
+    {
+        $data = $request->validate([
+            'name'     => ['required', 'string', 'max:100'],
+            'category' => ['required', 'string', 'max:50'],
+            'price'    => ['required', 'integer', 'min:0'],
+            'unit'     => ['required', 'string', 'max:20'],
+            'icon'     => ['nullable', 'string', 'max:50'],
+        ], [], [
+            'name'     => 'nama jenis sampah',
+            'category' => 'kategori',
+            'price'    => 'harga',
+            'unit'     => 'satuan',
+        ]);
+
+        // Pakai ikon default bila dikosongkan
+        $data['icon'] = ($data['icon'] ?? '') ?: 'bi-recycle';
+
+        return $data;
+    }
 }

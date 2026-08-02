@@ -53,4 +53,11 @@ Route::middleware(['auth', 'role:karyawan'])->prefix('karyawan')->name('karyawan
     Route::get('/kartu', [KaryawanController::class, 'cardRequests'])->name('card.index');
     Route::get('/kartu/{cardRequest}/cetak', [KaryawanController::class, 'showCard'])->name('card.show');
     Route::post('/kartu/{cardRequest}/selesai', [KaryawanController::class, 'markPrinted'])->name('card.printed');
+    /* -- Kelola Jenis Sampah & Harga (CRUD master data) -- */
+    Route::get('/jenis-sampah', [KaryawanController::class, 'categories'])->name('categories.index');
+    Route::get('/jenis-sampah/tambah', [KaryawanController::class, 'createCategory'])->name('categories.create');
+    Route::post('/jenis-sampah', [KaryawanController::class, 'storeCategory'])->name('categories.store');
+    Route::get('/jenis-sampah/{category}/edit', [KaryawanController::class, 'editCategory'])->name('categories.edit');
+    Route::put('/jenis-sampah/{category}', [KaryawanController::class, 'updateCategory'])->name('categories.update');
+    Route::delete('/jenis-sampah/{category}', [KaryawanController::class, 'destroyCategory'])->name('categories.destroy');
 });
