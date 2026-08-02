@@ -22,6 +22,7 @@
         <a href="{{ route('karyawan.dropoff') }}" class="{{ request()->routeIs('karyawan.dropoff') || (request()->routeIs('karyawan.input') && $from === 'dropoff') ? 'active' : '' }}"><i class="bi bi-geo-alt"></i> Drop Off</a>
         <a href="{{ route('karyawan.card.index') }}" class="{{ request()->routeIs('karyawan.card.*') ? 'active' : '' }}"><i class="bi bi-person-vcard"></i> Kartu Anggota</a>
         <a href="{{ route('karyawan.categories.index') }}" class="{{ request()->routeIs('karyawan.categories.*') ? 'active' : '' }}"><i class="bi bi-tags"></i> Jenis Sampah</a>
+        <a href="{{ route('karyawan.reports.index') }}" class="{{ request()->routeIs('karyawan.reports.*') ? 'active' : '' }}"><i class="bi bi-file-earmark-spreadsheet"></i> Rekap Bulanan</a>
     </nav>
 
     <div class="mt-auto gg-menu">

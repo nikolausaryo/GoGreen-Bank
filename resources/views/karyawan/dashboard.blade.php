@@ -15,17 +15,36 @@
     <div class="col-6 col-lg-3"><div class="metric-card h-100"><div class="l">Nasabah Masuk</div><div class="v text-green">{{ $stats['nasabah_masuk'] }} <small class="fs-6 text-muted-2">Nasabah</small></div><div class="small text-muted-2">Scan QR / drop-off hari ini</div></div></div>
 </div>
 
-{{-- Aktivitas Terbaru --}}
+{{-- Penukar bulan --}}
+<div class="gg-card p-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+        <div class="fw-800"><i class="bi bi-calendar3 me-1"></i> Rekap Bulan {{ $period['label'] }}</div>
+        <div class="text-muted-2 small">Menampilkan setoran &amp; penarikan pada bulan ini. Ganti bulan untuk melihat periode lain.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('karyawan.dashboard', ['month' => $period['prev']]) }}" class="btn btn-sm btn-outline-forest">
+            <i class="bi bi-chevron-left"></i> Sebelumnya
+        </a>
+        @unless ($period['is_current'])
+            <a href="{{ route('karyawan.dashboard', ['month' => $period['next']]) }}" class="btn btn-sm btn-outline-forest">
+                Berikutnya <i class="bi bi-chevron-right"></i>
+            </a>
+        @endunless
+    </div>
+</div>
+
+{{-- Aktivitas bulan ini --}}
 <div class="gg-card p-4 mb-3">
-    <h5 class="fw-800 mb-0">Informasi Aktivitas Terbaru</h5>
+    <h5 class="fw-800 mb-0">Informasi Aktivitas — {{ $period['label'] }}</h5>
     <p class="text-muted-2 small">Ringkasan aktivitas konversi sampah menjadi sumber daya</p>
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr class="text-muted-2 small"><th>ID Setoran</th><th>Kontributor</th><th>Jenis Sampah</th><th>Berat</th><th>Penghasilan</th><th>Status</th></tr></thead>
+            <thead><tr class="text-muted-2 small"><th>ID Setoran</th><th>Tanggal</th><th>Kontributor</th><th>Jenis Sampah</th><th>Berat</th><th>Penghasilan</th><th>Status</th></tr></thead>
             <tbody>
-            @forelse ($recentTransactions as $t)
+            @forelse ($monthTransactions as $t)
                 <tr>
                     <td class="fw-bold text-green">{{ $t->code }}</td>
+                    <td class="text-muted-2 small">{{ $t->created_at->locale('id')->translatedFormat('d M Y') }}</td>
                     <td>{{ $t->user->name }}</td>
                     <td><span class="badge-soft">{{ strtoupper($t->wasteCategory->name) }}</span></td>
                     <td>{{ rtrim(rtrim(number_format($t->weight,2),'0'),'.') }} {{ $t->wasteCategory->unit }}</td>
@@ -33,24 +52,25 @@
                     <td><span class="badge-status badge-{{ $t->status }}"><i class="bi bi-check-circle"></i> {{ ucfirst($t->status) }}</span></td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="text-center text-muted-2 py-4">Belum ada aktivitas.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted-2 py-4">Belum ada aktivitas pada {{ $period['label'] }}.</td></tr>
             @endforelse
             </tbody>
         </table>
     </div>
 </div>
 
-{{-- Penarikan Terbaru --}}
+{{-- Penarikan bulan ini --}}
 <div class="gg-card p-4">
-    <h5 class="fw-800 mb-0">Informasi Penarikan Terbaru</h5>
+    <h5 class="fw-800 mb-0">Informasi Penarikan — {{ $period['label'] }}</h5>
     <p class="text-muted-2 small">Ringkasan aktivitas penarikan tabungan</p>
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr class="text-muted-2 small"><th>ID Penarikan</th><th>Kontributor</th><th>Opsi Penarikan</th><th>Nomor Rekening/E-Wallet</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead>
+            <thead><tr class="text-muted-2 small"><th>ID Penarikan</th><th>Tgl Pengajuan</th><th>Kontributor</th><th>Opsi Penarikan</th><th>Nomor Rekening/E-Wallet</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody>
-            @forelse ($recentWithdrawals as $w)
+            @forelse ($monthWithdrawals as $w)
                 <tr>
                     <td class="fw-bold text-green">{{ $w->code }}</td>
+                    <td class="text-muted-2 small">{{ $w->created_at->locale('id')->translatedFormat('d M Y') }}</td>
                     <td>{{ $w->user->name }}</td>
                     <td><span class="badge-soft">{{ strtoupper($w->account_name) }}</span></td>
                     <td>{{ $w->account_number }}</td>
@@ -71,7 +91,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="text-center text-muted-2 py-4">Belum ada penarikan.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted-2 py-4">Belum ada penarikan pada {{ $period['label'] }}.</td></tr>
             @endforelse
             </tbody>
         </table>

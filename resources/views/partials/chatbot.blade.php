@@ -207,6 +207,15 @@
                 'Klik "Kembali ke daftar" bila ingin membatalkan.',
             ],
         ],
+        'karyawan.reports.index' => [
+            'title' => 'Rekap Bulanan',
+            'intro' => 'Membuat rekap bulanan & mengunduh Excel:',
+            'steps' => [
+                'Pilih bulan, lalu klik "Buat Rekap" untuk menyimpan ringkasannya.',
+                'Klik "Excel" pada baris rekap untuk mengunduh berkas .xlsx.',
+                'Klik ikon hapus untuk menghapus catatan rekap (data transaksi tetap aman).',
+            ],
+        ],
     ];
 
     $default = [

@@ -6,16 +6,38 @@ use App\Models\User;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
 use App\Models\WasteCategory;
+use App\Models\MonthlyReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class KaryawanController extends Controller
 {
     // Ringkasan / dashboard utama karyawan
-    public function dashboard()
+    public function dashboard(Request $request)
     {
-        $recentTransactions = Transaction::with(['user', 'wasteCategory'])->latest()->take(5)->get();
-        $recentWithdrawals = Withdrawal::with('user')->latest()->take(3)->get();
+        // Bulan yang sedang ditampilkan (default: bulan ini)
+        try {
+            $cursor = $request->query('month')
+                ? \Carbon\Carbon::createFromFormat('Y-m', $request->query('month'))->startOfMonth()
+                : \Carbon\Carbon::now()->startOfMonth();
+        } catch (\Exception $e) {
+            $cursor = \Carbon\Carbon::now()->startOfMonth();
+        }
+        $start = $cursor->copy()->startOfMonth();
+        $end   = $cursor->copy()->endOfMonth();
+
+        // Data disaring per bulan (data lama tetap tersimpan, hanya tampilannya difilter)
+        $monthTransactions = Transaction::with(['user', 'wasteCategory'])
+            ->whereBetween('created_at', [$start, $end])->latest()->get();
+        $monthWithdrawals = Withdrawal::with('user')
+            ->whereBetween('created_at', [$start, $end])->latest()->get();
+
+        $period = [
+            'label'      => $cursor->locale('id')->translatedFormat('F Y'),
+            'prev'       => $cursor->copy()->subMonth()->format('Y-m'),
+            'next'       => $cursor->copy()->addMonth()->format('Y-m'),
+            'is_current' => $cursor->isSameMonth(\Carbon\Carbon::now()),
+        ];
 
         $today = \Carbon\Carbon::today();
 
@@ -37,7 +59,7 @@ class KaryawanController extends Controller
                         ->distinct()->count('user_id'),
         ];
 
-        return view('karyawan.dashboard', compact('recentTransactions', 'recentWithdrawals', 'stats'));
+        return view('karyawan.dashboard', compact('monthTransactions', 'monthWithdrawals', 'stats', 'period'));
     }
 
     // Halaman scan QR / cari nasabah manual
@@ -152,13 +174,6 @@ class KaryawanController extends Controller
         return view('karyawan.card-print', compact('cardRequest', 'user'));
     }
 
-    public function markPrinted(\App\Models\CardRequest $cardRequest)
-    {
-        $cardRequest->update(['status' => 'dicetak']);
-        return redirect()->route('karyawan.card.index')
-            ->with('success', 'Kartu ' . $cardRequest->user->name . ' ditandai sudah dicetak.');
-    }
-
     /* ============ Kelola Jenis Sampah & Harga (CRUD) ============ */
 
     // Daftar semua jenis sampah
@@ -214,6 +229,170 @@ class KaryawanController extends Controller
         return back()->with('success', 'Jenis sampah "' . $name . '" berhasil dihapus.');
     }
 
+    /* ============ Rekap / Laporan Bulanan ============ */
+
+    // Rentang awal-akhir bulan dari periode 'YYYY-MM'
+    private function monthRange(string $period): array
+    {
+        $cursor = \Carbon\Carbon::createFromFormat('Y-m', $period)->startOfMonth();
+        return [$cursor->copy()->startOfMonth(), $cursor->copy()->endOfMonth()];
+    }
+
+    // Daftar rekap tersimpan
+    public function reports()
+    {
+        $reports = MonthlyReport::orderByDesc('period')->get();
+        return view('karyawan.reports.index', [
+            'reports'      => $reports,
+            'defaultMonth' => \Carbon\Carbon::now()->format('Y-m'),
+        ]);
+    }
+
+    // Buat / perbarui rekap untuk satu bulan
+    public function storeReport(Request $request)
+    {
+        $data = $request->validate([
+            'period' => ['required', 'date_format:Y-m'],
+        ], [], ['period' => 'bulan']);
+
+        $period = $data['period'];
+        [$start, $end] = $this->monthRange($period);
+
+        $totals = [
+            'label'             => \Carbon\Carbon::createFromFormat('Y-m', $period)->locale('id')->translatedFormat('F Y'),
+            'deposits_count'    => Transaction::whereBetween('created_at', [$start, $end])->count(),
+            'total_weight'      => round(Transaction::whereBetween('created_at', [$start, $end])->sum('weight'), 2),
+            'total_income'      => Transaction::whereBetween('created_at', [$start, $end])->sum('amount'),
+            'withdrawals_count' => Withdrawal::whereBetween('created_at', [$start, $end])->count(),
+            'total_withdrawal'  => Withdrawal::whereBetween('created_at', [$start, $end])->sum('amount'),
+            'active_members'    => Transaction::whereBetween('created_at', [$start, $end])->distinct()->count('user_id'),
+            'generated_by'      => Auth::id(),
+        ];
+
+        $report = MonthlyReport::updateOrCreate(['period' => $period], $totals);
+
+        return redirect()->route('karyawan.reports.index')
+            ->with('success', 'Rekap ' . $report->label . ' berhasil dibuat/diperbarui.');
+    }
+
+    // Hapus catatan rekap (data transaksi tidak terpengaruh)
+    public function destroyReport(MonthlyReport $report)
+    {
+        $label = $report->label;
+        $report->delete();
+
+        return back()->with('success', 'Rekap ' . $label . ' berhasil dihapus. Data transaksi tetap aman.');
+    }
+
+    // Unduh rekap sebagai file Excel (.xlsx) — dibuat ulang dari data bulan tsb.
+    public function downloadReport(MonthlyReport $report)
+    {
+        [$start, $end] = $this->monthRange($report->period);
+
+        $transactions = Transaction::with(['user', 'wasteCategory'])
+            ->whereBetween('created_at', [$start, $end])->orderBy('created_at')->get();
+        $withdrawals = Withdrawal::with('user')
+            ->whereBetween('created_at', [$start, $end])->orderBy('created_at')->get();
+
+        $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $ss->getActiveSheet();
+        $sheet->setTitle('Rekap');
+
+        $rupiah = fn ($n) => 'Rp ' . number_format((int) $n, 0, ',', '.');
+
+        // Judul
+        $sheet->setCellValue('A1', 'REKAP BULANAN — GoGreen Bank');
+        $sheet->setCellValue('A2', 'Periode: ' . $report->label);
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A2')->getFont()->setBold(true);
+
+        // Ringkasan
+        $sheet->setCellValue('A4', 'RINGKASAN');
+        $sheet->getStyle('A4')->getFont()->setBold(true);
+        $ringkasan = [
+            ['Jumlah Setoran', $report->deposits_count . ' transaksi'],
+            ['Total Berat Sampah', rtrim(rtrim(number_format($report->total_weight, 2, ',', '.'), '0'), ',') . ' kg'],
+            ['Total Penghasilan Nasabah', $rupiah($report->total_income)],
+            ['Jumlah Penarikan', $report->withdrawals_count . ' pengajuan'],
+            ['Total Nominal Penarikan', $rupiah($report->total_withdrawal)],
+            ['Nasabah Aktif', $report->active_members . ' nasabah'],
+        ];
+        $r = 5;
+        foreach ($ringkasan as $row) {
+            $sheet->setCellValue('A' . $r, $row[0]);
+            $sheet->setCellValue('B' . $r, $row[1]);
+            $r++;
+        }
+
+        // Daftar Setoran
+        $r += 1;
+        $sheet->setCellValue('A' . $r, 'DAFTAR SETORAN');
+        $sheet->getStyle('A' . $r)->getFont()->setBold(true);
+        $r++;
+        $head = ['No', 'ID Setoran', 'Tanggal', 'Nasabah', 'Jenis Sampah', 'Berat', 'Penghasilan', 'Status'];
+        $sheet->fromArray($head, null, 'A' . $r);
+        $sheet->getStyle('A' . $r . ':H' . $r)->getFont()->setBold(true);
+        $r++;
+        $no = 1;
+        foreach ($transactions as $t) {
+            $sheet->fromArray([
+                $no++,
+                $t->code,
+                $t->created_at->format('d/m/Y'),
+                optional($t->user)->name,
+                optional($t->wasteCategory)->name,
+                rtrim(rtrim(number_format($t->weight, 2, ',', '.'), '0'), ',') . ' ' . optional($t->wasteCategory)->unit,
+                $rupiah($t->amount),
+                ucfirst($t->status),
+            ], null, 'A' . $r);
+            $r++;
+        }
+        if ($transactions->isEmpty()) {
+            $sheet->setCellValue('A' . $r, 'Tidak ada setoran pada periode ini.');
+            $r++;
+        }
+
+        // Daftar Penarikan
+        $r += 1;
+        $sheet->setCellValue('A' . $r, 'DAFTAR PENARIKAN');
+        $sheet->getStyle('A' . $r)->getFont()->setBold(true);
+        $r++;
+        $head2 = ['No', 'ID Penarikan', 'Tgl Pengajuan', 'Nasabah', 'Opsi', 'Nomor Rekening/E-Wallet', 'Nominal', 'Status'];
+        $sheet->fromArray($head2, null, 'A' . $r);
+        $sheet->getStyle('A' . $r . ':H' . $r)->getFont()->setBold(true);
+        $r++;
+        $no = 1;
+        foreach ($withdrawals as $w) {
+            $sheet->fromArray([
+                $no++,
+                $w->code,
+                $w->created_at->format('d/m/Y'),
+                optional($w->user)->name,
+                $w->account_name,
+                ' ' . $w->account_number, // spasi depan agar tidak jadi angka
+                $rupiah($w->amount),
+                ucfirst($w->status),
+            ], null, 'A' . $r);
+            $r++;
+        }
+        if ($withdrawals->isEmpty()) {
+            $sheet->setCellValue('A' . $r, 'Tidak ada penarikan pada periode ini.');
+        }
+
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss);
+        $filename = 'Rekap_' . str_replace(' ', '_', $report->label) . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
     // Aturan validasi bersama (tambah & ubah)
     private function validateCategory(Request $request): array
     {
@@ -234,5 +413,12 @@ class KaryawanController extends Controller
         $data['icon'] = ($data['icon'] ?? '') ?: 'bi-recycle';
 
         return $data;
+    }
+
+    public function markPrinted(\App\Models\CardRequest $cardRequest)
+    {
+        $cardRequest->update(['status' => 'dicetak']);
+        return redirect()->route('karyawan.card.index')
+            ->with('success', 'Kartu ' . $cardRequest->user->name . ' ditandai sudah dicetak.');
     }
 }
