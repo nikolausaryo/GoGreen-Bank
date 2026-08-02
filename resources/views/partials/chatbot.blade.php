@@ -67,6 +67,26 @@
                 'Selesai! Anda langsung masuk ke Dashboard Nasabah.',
             ],
         ],
+        'password.request' => [
+            'title' => 'Lupa Kata Sandi',
+            'intro' => 'Tidak bisa masuk? Ikuti langkah ini:',
+            'steps' => [
+                'Masukkan email yang terdaftar pada akun Anda.',
+                'Klik kirim — tautan atur ulang kata sandi dikirim ke email tersebut.',
+                'Sudah ingat kata sandi? Kembali ke halaman Masuk.',
+            ],
+        ],
+
+        /* ---------- Umum (nasabah & karyawan) ---------- */
+        'settings' => [
+            'title' => 'Pengaturan Profil',
+            'intro' => 'Perbarui data akun Anda di sini:',
+            'steps' => [
+                'Ubah nama dan email sesuai kebutuhan.',
+                'Unggah atau ganti foto profil (avatar) Anda.',
+                'Klik "Simpan" untuk menyimpan perubahan.',
+            ],
+        ],
 
         /* ---------- Nasabah ---------- */
         'nasabah.dashboard' => [
@@ -140,6 +160,51 @@
                 'Klik kartu jenis sampah yang sesuai pada grid kategori.',
                 'Masukkan berat sampah — total kredit dihitung otomatis.',
                 'Klik "Simpan": setoran tercatat dan saldo nasabah langsung bertambah.',
+            ],
+        ],
+        'karyawan.card.index' => [
+            'title' => 'Permintaan Cetak Kartu',
+            'intro' => 'Kelola pengajuan kartu anggota nasabah:',
+            'steps' => [
+                'Lihat daftar nasabah yang mengajukan cetak kartu anggota.',
+                'Klik "Cetak Kartu" untuk membuka halaman kartu siap cetak.',
+                'Kartu yang belum dicetak ditandai pada kolom status.',
+            ],
+        ],
+        'karyawan.card.show' => [
+            'title' => 'Cetak Kartu Anggota',
+            'intro' => 'Halaman kartu anggota siap cetak:',
+            'steps' => [
+                'Periksa data dan QR Code pada pratinjau kartu.',
+                'Cetak atau unduh kartu untuk diberikan kepada nasabah.',
+                'Klik "Tandai sudah dicetak" setelah kartu selesai dicetak.',
+            ],
+        ],
+        'karyawan.categories.index' => [
+            'title' => 'Kelola Jenis Sampah',
+            'intro' => 'Atur data master jenis sampah & harga:',
+            'steps' => [
+                'Lihat semua jenis sampah beserta kategori, harga, dan satuannya.',
+                'Klik "Tambah Jenis Sampah" untuk menambah data baru.',
+                'Pakai ikon pensil untuk mengubah, atau ikon tempat sampah untuk menghapus.',
+            ],
+        ],
+        'karyawan.categories.create' => [
+            'title' => 'Tambah Jenis Sampah',
+            'intro' => 'Menambahkan jenis sampah baru:',
+            'steps' => [
+                'Isi nama, kategori, harga per satuan, dan satuannya.',
+                'Pilih ikon (opsional) — pratinjaunya tampil di samping nama.',
+                'Klik "Simpan" untuk menambahkan ke daftar.',
+            ],
+        ],
+        'karyawan.categories.edit' => [
+            'title' => 'Ubah Jenis Sampah',
+            'intro' => 'Memperbarui data jenis sampah:',
+            'steps' => [
+                'Ubah data yang perlu diperbarui, misalnya harga.',
+                'Klik "Simpan Perubahan" untuk menyimpan.',
+                'Klik "Kembali ke daftar" bila ingin membatalkan.',
             ],
         ],
     ];
